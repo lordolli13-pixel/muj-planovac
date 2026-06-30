@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Plánovač 2026</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <style>
         :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
@@ -16,18 +12,14 @@
         .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
         .day-name { text-align: center; font-size: 0.7rem; color: #888; padding-bottom: 5px; }
         .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; }
-        .day.has-notes { border-bottom: 4px solid #ffffff; } 
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
-        #editPanel { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
+        .day.has-notes { border-bottom: 4px solid #ffffff; }
         .day.prace { background: #8b0000; } .day.dovolena { background: #8b7500; } .day.volno { background: #006400; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
         #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; justify-content:center; z-index:100; }
         .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; }
-        .modal-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #444; }
-        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-size: 1rem; }
-        .person-container { display: flex; gap: 5px; }
-        .person-btn { padding: 10px 5px; font-size: 0.8rem; cursor: pointer; border: 2px solid transparent; color: white; flex: 1; text-align: center; border-radius: 6px; opacity: 0.6; }
-        .person-btn.active { opacity: 1; border-color: #fff; font-weight: bold; }
-        .p-OLDA { background-color: #4b5563 !important; } .p-JÁŠA { background-color: #20b2aa !important; } .p-AISHA { background-color: #9d174d !important; } .p-JINÉ { background-color: #374151 !important; }
+        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; }
+        .person-btn { padding: 8px; border: 1px solid #555; cursor: pointer; margin: 2px; opacity: 0.5; }
+        .person-btn.active { opacity: 1; border-color: #fff; }
     </style>
 </head>
 <body>
@@ -38,112 +30,60 @@
             <div id="monthLabel" style="font-weight:bold;"></div>
             <button class="btn" onclick="changeMonth(1)">▶</button>
         </div>
-        <div class="grid" id="calendarGrid"></div>
+        <div class="grid" id="calendarGrid">Načítám...</div>
     </div>
     <div class="panel">
-        <button class="btn" style="width:100%; background:#4a4a4a;" onclick="toggleEdit()">✏ Editace režimu</button>
-        <div id="editPanel">
-            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
-            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
-            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
-            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
-        </div>
+        <button class="btn" style="width:100%; background:#059669;" onclick="loadData()">🔄 Obnovit data</button>
     </div>
-    <div class="panel" id="taskList" style="font-size: 0.9rem;"></div>
 </div>
 
 <div id="modal">
     <div class="modal-content">
-        <h3 id="modalTitle">Události dne</h3>
+        <h3 id="modalTitle">Detaily</h3>
         <div id="eventInputs"></div>
-        <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669;">+ Přidat úkol</button>
-        <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e; margin-top:10px;">Uložit vše</button>
-        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444; margin-top:10px;">Zavřít</button>
+        <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e;">Uložit</button>
+        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444;">Zavřít</button>
     </div>
 </div>
 
 <script>
-    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isSelecting = false;
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPc9RpR-T7uZvHzePHFaG25_rx8pmeD5eUPa6erj_fK0IUOo69LFUoULJ4pbpFzypH/exec'; 
-    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
-    const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+    
+    const SCRIPT_URL = 'ZDE_VLOZTE_VASI_URL_KONCICI_EXEC';
+    let date = new Date(), allData = {}, selectedDay = 1;
 
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
-
-    function applyMode(d, i) {
-        if (!isLocked) {
-            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
-            allData[key] = { ...allData[key], status: mode };
-            d.className = 'day ' + mode + (allData[key].events?.length > 0 ? ' has-notes' : '');
+    async function loadData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const data = await response.json();
+            allData = data;
+            render();
+        } catch(e) {
+            document.getElementById('calendarGrid').innerText = "Chyba: " + e.message;
         }
     }
 
-    async function loadData() { try { const r = await fetch(SCRIPT_URL); allData = await r.json(); render(); } catch(e) { render(); } }
-    async function saveCloud() { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) }); }
-
     function render() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
-        dayNames.forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
+        ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
         document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
+        
         const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
         for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+        
         const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         for(let i=1; i<=days; i++) {
             let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
             let d = document.createElement('div');
-            d.className = 'day ' + (allData[key]?.status || '') + (allData[key]?.events?.length > 0 ? ' has-notes' : '');
+            d.className = 'day ' + (allData[key]?.status || '');
             d.innerText = i;
-            d.onmousedown = () => { isSelecting = true; applyMode(d, i); };
-            d.onmouseover = () => { if(isSelecting) applyMode(d, i); };
-            d.onmouseup = () => { isSelecting = false; saveCloud(); };
-            d.onclick = () => { if(isLocked) openModal(i, allData[key] || {status:"", events:[]}); };
+            d.onclick = () => alert("V tento den: " + (allData[key]?.status || "nic"));
             grid.appendChild(d);
         }
-        updateTaskList();
     }
 
-    function openModal(day, data) {
-        selectedDay = day;
-        document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;
-        document.getElementById('eventInputs').innerHTML = "";
-        data.events.forEach(e => addEventInput(e));
-        document.getElementById('modal').style.display = 'flex';
-    }
-
-    function saveData() {
-        let events = [];
-        document.querySelectorAll('.modal-card').forEach(c => {
-            let a = c.querySelector('.person-btn.active');
-            events.push({ text: c.querySelector('.evt-input').value, person: a ? a.innerText.trim() : "JINÉ" });
-        });
-        allData[`${date.getFullYear()}-${date.getMonth()}-${selectedDay}`] = { ...allData[`${date.getFullYear()}-${date.getMonth()}-${selectedDay}`], events: events };
-        document.getElementById('modal').style.display = 'none';
-        saveCloud(); render();
-    }
-
-    function addEventInput(obj = {text:"", person:"JINÉ"}) {
-        const div = document.createElement('div'); div.className = 'modal-card';
-        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol"> 
-        <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div> 
-        <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
-        document.getElementById('eventInputs').appendChild(div);
-    }
-
-    function updateTaskList() {
-        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
-        for (let key in allData) {
-            let dayOnly = key.split('-')[2];
-            allData[key].events.forEach(e => {
-                list.innerHTML += `<div class="p-${e.person}" style="padding:4px; margin:2px 0; border-radius:4px; color:white;">${dayOnly}.: <b>${e.person}</b> - ${e.text}</div>`;
-            });
-        }
-    }
-
-    function toggleEdit() { document.getElementById('editPanel').style.display = (document.getElementById('editPanel').style.display === 'flex') ? 'none' : 'flex'; }
-    function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
-    function setMode(m) { mode = m; }
     function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
-
+    
+    // Spuštění
     loadData();
 </script>
 </body>

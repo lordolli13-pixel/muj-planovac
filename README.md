@@ -1,0 +1,2 @@
+# muj-planovac
+planovaní

@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobilní Plánovač 2026</title>
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#121212">
-    <link rel="apple-touch-icon" href="./icon-192.png">
-    
+    <title>Plánovač 2026</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
         .wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
         .panel { background: var(--panel); padding: 12px; border-radius: 8px; border: 1px solid #333; }
         .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
-        .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; position: relative; user-select: none; }
+        .day-name { text-align: center; font-size: 0.7rem; color: #888; padding-bottom: 5px; }
+        .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; }
         .day.today { border: 1px solid #fff; }
         .day.has-notes { border-bottom: 4px solid #ffffff; } 
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
+        #editPanel { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
         .day.prace { background: #8b0000; } .day.dovolena { background: #8b7500; } .day.volno { background: #006400; }
         #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; justify-content:center; z-index:100; }
         .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; }
@@ -30,79 +29,79 @@
     </style>
 </head>
 <body>
-
 <div class="wrapper">
     <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <button class="btn" style="width:50px" onclick="changeMonth(-1)">◀</button>
-            <div id="monthLabel" style="font-weight:bold; font-size: 1.2rem;"></div>
-            <button class="btn" style="width:50px" onclick="changeMonth(1)">▶</button>
+            <button class="btn" onclick="changeMonth(-1)">◀</button>
+            <div id="monthLabel" style="font-weight:bold;"></div>
+            <button class="btn" onclick="changeMonth(1)">▶</button>
         </div>
         <div class="grid" id="calendarGrid"></div>
     </div>
-    <div class="panel" style="display:flex; flex-wrap:wrap; justify-content:center;">
-        <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
-        <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
-        <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
-        <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
+    <div class="panel">
+        <button class="btn" style="width:100%; background:#4a4a4a;" onclick="toggleEdit()">✏ Editace režimu</button>
+        <div id="editPanel">
+            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
+            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
+            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
+            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
+        </div>
     </div>
     <div class="panel" id="taskList" style="font-size: 0.9rem;"></div>
 </div>
 
 <div id="modal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="margin-top:0;">Události dne</h3>
+        <h3 id="modalTitle">Události dne</h3>
         <div id="eventInputs"></div>
-        <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669; margin-top:10px;">+ Přidat úkol</button>
+        <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669;">+ Přidat úkol</button>
         <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e; margin-top:10px;">Uložit vše</button>
         <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444; margin-top:10px;">Zavřít</button>
     </div>
 </div>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW chyba:', err));
+    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1;
+    const SCRIPT_URL = 'URL_VASEHO_APPS_SCRIPTU'; 
+    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
+    const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+
+    async function loadData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            allData = await response.json();
+            render();
+        } catch(e) { console.error("Chyba načítání dat"); render(); }
     }
 
-    let date = new Date(), mode = 'prace', isLocked = true, isMouseDown = false, selectedDay = 1;
-    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
+    async function saveCloud() {
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) });
+        render();
+    }
 
     function render() {
-        const grid = document.getElementById('calendarGrid');
+        const grid = document.getElementById('calendarGrid'); 
         grid.innerHTML = "";
+        
+        // Vykreslení záhlaví dnů
+        dayNames.forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
+
         document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
+        
         const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
         for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+        
         const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         for(let i=1; i<=days; i++) {
-            let data = JSON.parse(localStorage.getItem(`d-${date.getFullYear()}-${date.getMonth()}-${i}`) || '{"status":"","events":[]}');
+            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
+            let data = allData[key] || {status:"", events:[]};
             let d = document.createElement('div');
-            d.className = 'day' + (data.status ? ' '+data.status : '') + (data.events.length > 0 ? ' has-notes' : '');
-            if(i === new Date().getDate() && date.getMonth() === new Date().getMonth()) d.classList.add('today');
+            d.className = 'day ' + (data.status || '') + (data.events.length > 0 ? ' has-notes' : '');
             d.innerText = i;
-            d.onmousedown = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown = true; paint(d, i); } else openModal(i, data); };
-            d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown = true; paint(d, i); } else openModal(i, data); };
-            d.onmouseenter = () => { if(isMouseDown) paint(d, i); };
+            d.onclick = () => { if(!isLocked) { data.status = mode; allData[key] = data; saveCloud(); } else openModal(i, data); };
             grid.appendChild(d);
         }
         updateTaskList();
-    }
-
-    function paint(el, i) {
-        let data = JSON.parse(localStorage.getItem(`d-${date.getFullYear()}-${date.getMonth()}-${i}`) || '{"status":"","events":[]}');
-        data.status = mode;
-        el.className = 'day ' + mode + (data.events.length > 0 ? ' has-notes' : '');
-        localStorage.setItem(`d-${date.getFullYear()}-${date.getMonth()}-${i}`, JSON.stringify(data));
-        updateTaskList();
-    }
-
-    function addEventInput(obj = {text:"", person:"JINÉ"}) {
-        const div = document.createElement('div');
-        div.className = 'modal-card';
-        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">
-            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
-            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
-        document.getElementById('eventInputs').appendChild(div);
     }
 
     function openModal(day, data) {
@@ -119,28 +118,33 @@
             let active = card.querySelector('.person-btn.active');
             events.push({ text: card.querySelector('.evt-input').value, person: active ? active.innerText : "JINÉ" });
         });
-        let data = JSON.parse(localStorage.getItem(`d-${date.getFullYear()}-${date.getMonth()}-${selectedDay}`) || '{"status":"","events":[]}');
-        data.events = events;
-        localStorage.setItem(`d-${date.getFullYear()}-${date.getMonth()}-${selectedDay}`, JSON.stringify(data));
+        let key = `${date.getFullYear()}-${date.getMonth()}-${selectedDay}`;
+        allData[key] = { ...allData[key], events: events };
         document.getElementById('modal').style.display = 'none';
-        render();
+        saveCloud();
+    }
+
+    function addEventInput(obj = {text:"", person:"JINÉ"}) {
+        const div = document.createElement('div'); div.className = 'modal-card';
+        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">
+            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
+            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
+        document.getElementById('eventInputs').appendChild(div);
     }
 
     function updateTaskList() {
-        const list = document.getElementById('taskList');
-        list.innerHTML = "<strong>Agenda:</strong>";
-        const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        for(let i=1; i<=days; i++) {
-            let data = JSON.parse(localStorage.getItem(`d-${date.getFullYear()}-${date.getMonth()}-${i}`) || '{"events":[]}');
-            data.events.forEach(e => list.innerHTML += `<div class="p-${e.person}" style="padding:8px; margin:4px 0; border-radius:4px; color:white;"><b>${i}.</b> ${e.person}: ${e.text}</div>`);
+        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
+        for (let key in allData) {
+            allData[key].events.forEach(e => list.innerHTML += `<div class="p-${e.person}" style="padding:4px; margin:2px 0; border-radius:4px; color:white;">${key}: ${e.text}</div>`);
         }
     }
 
+    function toggleEdit() { document.getElementById('editPanel').style.display = (document.getElementById('editPanel').style.display === 'flex') ? 'none' : 'flex'; }
     function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
     function setMode(m) { mode = m; }
     function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
-    window.onmouseup = () => isMouseDown = false;
-    render();
+
+    loadData();
 </script>
 </body>
 </html>

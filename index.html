@@ -63,24 +63,23 @@
 </div>
 
 <script>
-    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1;
+    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isSelecting = false;
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwClBSbgLO9WrSKpMewU4hCqtflFn2SVbyzJDDtCyw9TWimKqQ5w1qtFpYdSEXWbBnH/exec'; 
     const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
     const dayNames = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW chyba:', err));
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
+
+    function applyMode(d, i) {
+        if (!isLocked) {
+            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
+            allData[key] = { ...allData[key], status: mode };
+            d.className = 'day ' + mode + (allData[key].events?.length > 0 ? ' has-notes' : '');
+        }
     }
 
-    async function loadData() {
-        try { const response = await fetch(SCRIPT_URL); allData = await response.json(); render(); }
-        catch(e) { render(); }
-    }
-
-    async function saveCloud() {
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) });
-        render();
-    }
+    async function loadData() { try { const r = await fetch(SCRIPT_URL); allData = await r.json(); render(); } catch(e) { render(); } }
+    async function saveCloud() { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) }); }
 
     function render() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
@@ -91,11 +90,13 @@
         const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         for(let i=1; i<=days; i++) {
             let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
-            let data = allData[key] || {status:"", events:[]};
             let d = document.createElement('div');
-            d.className = 'day ' + (data.status || '') + (data.events.length > 0 ? ' has-notes' : '');
+            d.className = 'day ' + (allData[key]?.status || '') + (allData[key]?.events?.length > 0 ? ' has-notes' : '');
             d.innerText = i;
-            d.onclick = () => { if(!isLocked) { data.status = mode; allData[key] = data; saveCloud(); } else openModal(i, data); };
+            d.onmousedown = () => { isSelecting = true; applyMode(d, i); };
+            d.onmouseover = () => { if(isSelecting) applyMode(d, i); };
+            d.onmouseup = () => { isSelecting = false; saveCloud(); };
+            d.onclick = () => { if(isLocked) openModal(i, allData[key] || {status:"", events:[]}); };
             grid.appendChild(d);
         }
         updateTaskList();
@@ -111,28 +112,30 @@
 
     function saveData() {
         let events = [];
-        document.querySelectorAll('.modal-card').forEach(card => {
-            let active = card.querySelector('.person-btn.active');
-            events.push({ text: card.querySelector('.evt-input').value, person: active ? active.innerText : "JINÉ" });
+        document.querySelectorAll('.modal-card').forEach(c => {
+            let a = c.querySelector('.person-btn.active');
+            events.push({ text: c.querySelector('.evt-input').value, person: a ? a.innerText.trim() : "JINÉ" });
         });
-        let key = `${date.getFullYear()}-${date.getMonth()}-${selectedDay}`;
-        allData[key] = { ...allData[key], events: events };
+        allData[`${date.getFullYear()}-${date.getMonth()}-${selectedDay}`] = { ...allData[`${date.getFullYear()}-${date.getMonth()}-${selectedDay}`], events: events };
         document.getElementById('modal').style.display = 'none';
-        saveCloud();
+        saveCloud(); render();
     }
 
     function addEventInput(obj = {text:"", person:"JINÉ"}) {
         const div = document.createElement('div'); div.className = 'modal-card';
-        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">
-            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
-            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
+        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol"> 
+        <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div> 
+        <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
         document.getElementById('eventInputs').appendChild(div);
     }
 
     function updateTaskList() {
         const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
         for (let key in allData) {
-            allData[key].events.forEach(e => list.innerHTML += `<div class="p-${e.person}" style="padding:4px; margin:2px 0; border-radius:4px; color:white;">${key}: ${e.text}</div>`);
+            let dayOnly = key.split('-')[2];
+            allData[key].events.forEach(e => {
+                list.innerHTML += `<div class="p-${e.person}" style="padding:4px; margin:2px 0; border-radius:4px; color:white;">${dayOnly}.: <b>${e.person}</b> - ${e.text}</div>`;
+            });
         }
     }
 

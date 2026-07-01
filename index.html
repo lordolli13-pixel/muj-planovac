@@ -4,146 +4,277 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobilní Plánovač 2026</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192.png">
+
     <style>
-        :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        .wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
-        .panel { background: var(--panel); padding: 12px; border-radius: 8px; border: 1px solid #333; }
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
-        .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; }
-        .day.today { border: 1px solid #fff; }
-        .day.has-notes { border-bottom: 4px solid #ffffff; }
-        .day.prace { background: #8b0000; } .day.dovolena { background: #8b7500; } .day.volno { background: #006400; }
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
-        #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; z-index:100; }
-        .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-radius: 15px 15px 0 0; }
-        .modal-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #444; }
-        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
-        .person-container { display: flex; gap: 5px; margin-bottom: 10px; }
-        .person-btn { padding: 8px; font-size: 0.7rem; border: 2px solid transparent; color: white; flex: 1; text-align: center; border-radius: 4px; opacity: 0.5; cursor: pointer; }
-        .person-btn.active { opacity: 1; border-color: #fff; font-weight: bold; }
-        .hidden-menu { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
-        .agenda-item { padding: 8px; margin: 4px 0; border-radius: 4px; color: white; display: flex; align-items: center; background: #2a2a2a; }
-        .color-OLDA { border-left: 5px solid #4b5563; }
-        .color-JÁŠA { border-left: 5px solid #20b2aa; }
-        .color-AISHA { border-left: 5px solid #9d174d; }
-        .color-JINÉ { border-left: 5px solid #374151; }
+        :root { --bg:#121212; --panel:#1e1e1e; --text:#e0e0e0; }
+        body { background:var(--bg); color:var(--text); font-family:sans-serif; margin:0; padding:10px; display:flex; justify-content:center; }
+        .wrapper { width:100%; max-width:500px; display:flex; flex-direction:column; gap:10px; }
+        .panel { background:var(--panel); padding:12px; border-radius:8px; border:1px solid #333; }
+
+        .weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-weight:bold; opacity:0.8; margin-top:5px; }
+        .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-top:10px; }
+
+        .day {
+            aspect-ratio:1;
+            background:#2a2a2a;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            border-radius:6px;
+            font-size:0.9rem;
+            border:1px solid transparent;
+            user-select:none;
+            transition:0.15s;
+        }
+        .day.today {
+            border:2px solid #ffffff;
+            background:#3a3a3a !important;
+            box-shadow:0 0 10px rgba(255,255,255,0.4);
+            font-weight:bold;
+        }
+        .day.has-notes { border-bottom:4px solid #ffffff; }
+
+        .day.prace { background:#8b0000; }
+        .day.dovolena { background:#8b7500; }
+        .day.volno { background:#006400; }
+
+        .btn { padding:12px; border:none; border-radius:6px; cursor:pointer; color:white; background:#333; margin:2px; font-size:1rem; width:100%; }
+
+        #markMenu { display:none; animation:fadeIn 0.2s ease; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(5px);} to {opacity:1; transform:translateY(0);} }
+
+        .legend-item { display:flex; align-items:center; gap:10px; margin:6px 0; }
+        .legend-swatch { width:26px; height:18px; border-radius:4px; }
+        .sw-prace { background:#8b0000; }
+        .sw-dovolena { background:#8b7500; }
+        .sw-volno { background:#006400; }
+
+        #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; justify-content:center; z-index:100; }
+        .modal-content { background:#1e1e1e; width:100%; max-height:90vh; overflow-y:auto; padding:20px;
+                         border-top-left-radius:15px; border-top-right-radius:15px; }
+        .modal-card { background:#2a2a2a; padding:15px; border-radius:8px; margin-bottom:10px; border-left:5px solid #444; }
+        .evt-input { width:100%; background:#111; color:white; border:1px solid #444; padding:12px; border-radius:6px; margin-bottom:10px; }
+
+        .person-container { display:flex; gap:5px; }
+        .person-btn { padding:10px 5px; font-size:0.8rem; cursor:pointer; border:2px solid transparent;
+                      color:white; flex:1; text-align:center; border-radius:6px; opacity:0.6; }
+        .person-btn.active { opacity:1; border-color:#fff; font-weight:bold; }
+
+        .p-OLDA { background:#4b5563 !important; }
+        .p-JÁŠA { background:#20b2aa !important; }
+        .p-AISHA { background:#9d174d !important; }
+        .p-JINÉ { background:#374151 !important; }
+
+        .sync-info { font-size:0.8rem; opacity:0.7; margin-top:6px; }
     </style>
 </head>
+
 <body>
 <div class="wrapper">
+
+    <!-- Kalendář -->
     <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <button class="btn" onclick="changeMonth(-1)">◀</button>
-            <div id="monthLabel" style="font-weight:bold;"></div>
-            <button class="btn" onclick="changeMonth(1)">▶</button>
+            <button class="btn" style="width:50px" onclick="changeMonth(-1)">◀</button>
+            <div id="monthLabel" style="font-weight:bold; font-size:1.2rem;"></div>
+            <button class="btn" style="width:50px" onclick="changeMonth(1)">▶</button>
         </div>
+
+        <div class="weekdays">
+            <div>Po</div><div>Út</div><div>St</div><div>Čt</div><div>Pá</div><div>So</div><div>Ne</div>
+        </div>
+
         <div class="grid" id="calendarGrid"></div>
+        <div class="sync-info" id="syncInfo">Offline lokální režim…</div>
     </div>
+
+    <!-- AGENDA HNED POD KALENDÁŘEM -->
+    <div class="panel" id="taskList" style="font-size:0.9rem;"></div>
+
+    <!-- ROZBALOVACÍ PANEL -->
     <div class="panel">
-        <button class="btn" style="width:100%" onclick="toggleMenu()">⚙️ Rozpis práce</button>
-        <div id="modeMenu" class="hidden-menu">
-            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
-            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
-            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
-            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
+        <button class="btn" onclick="toggleMarkMenu()" style="background:#2b2b2b;">Označení dnů ▼</button>
+
+        <div id="markMenu">
+            <button class="btn" onclick="setMode('prace')" style="background:#8b0000;">Práce</button>
+            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500;">Dovolená</button>
+            <button class="btn" onclick="setMode('volno')" style="background:#006400;">Volno</button>
+
+            <div style="margin-top:12px; padding:10px; background:#151515; border-radius:8px;">
+                <div class="legend-item"><div class="legend-swatch sw-prace"></div> Práce</div>
+                <div class="legend-item"><div class="legend-swatch sw-dovolena"></div> Dovolená</div>
+                <div class="legend-item"><div class="legend-swatch sw-volno"></div> Volno</div>
+            </div>
         </div>
+
+        <button class="btn" id="lockBtn" onclick="toggleLock()" style="margin-top:10px;">🔒</button>
+        <button class="btn" onclick="syncToSupabase()" style="margin-top:10px; background:#005a9e;">📡 Sync do Supabase</button>
+        <button class="btn" onclick="loadFromSupabase()" style="margin-top:10px; background:#059669;">⬇ Načíst ze Supabase</button>
     </div>
-    <div class="panel" id="taskList" style="font-size: 0.85rem;"></div>
+
 </div>
 
+<!-- Modal -->
 <div id="modal">
     <div class="modal-content">
-        <h3 id="modalTitle"></h3>
+        <h3 id="modalTitle">Události dne</h3>
         <div id="eventInputs"></div>
-        <button class="btn" style="width:100%; background:#059669" onclick="addEventInput()">+ Přidat úkol</button>
-        <button class="btn" style="width:100%; background:#005a9e" onclick="saveData()">Uložit vše do Cloudu</button>
-        <button class="btn" style="width:100%; background:#444" onclick="document.getElementById('modal').style.display='none'">Zavřít</button>
+
+        <button class="btn" onclick="addEventInput()" style="background:#059669;">+ Přidat úkol</button>
+        <button class="btn" onclick="saveData()" style="background:#005a9e;">Uložit vše</button>
+        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="background:#444;">Zavřít</button>
     </div>
 </div>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+
 <script>
-    const _supabase = window.supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
-    let date = new Date(), mode = 'prace', isLocked = true, isMouseDown = false, selectedKey = "";
-    let fullDbData = {}; // Zde držíme všechna data stažená ze Supabase
-    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
+let date = new Date(), mode = 'prace', isLocked = true, isMouseDown = false, selectedDay = 1;
+const persons = ["OLDA","JÁŠA","AISHA","JINÉ"];
 
-    async function loadFromDB() {
-        const { data } = await _supabase.from('planovac').select('data').eq('id', 'hlavni').single();
-        if (data) fullDbData = data.data;
-        render();
-    }
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW chyba:', err));
+}
 
-    function render() {
-        const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
-        document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
-        const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        const start = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
-        for(let i=0; i<start; i++) grid.innerHTML += '<div></div>';
-        for(let i=1; i<=days; i++) {
-            const key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
-            const dData = fullDbData[key] || {status:"", events:[]};
-            const d = document.createElement('div');
-            d.className = `day ${dData.status} ${dData.events.length ? 'has-notes' : ''}`;
-            d.innerText = i;
-            d.onmousedown = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown=true; paint(key, d); } else openModal(key, i); };
-            d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown=true; paint(key, d); } else openModal(key, i); };
-            grid.appendChild(d);
-        }
-        updateAgenda();
-    }
+function render() {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = "";
+    document.getElementById('monthLabel').innerText =
+        date.toLocaleDateString('cs',{month:'long',year:'numeric'});
 
-    function paint(key, el) { 
-        if(!fullDbData[key]) fullDbData[key] = {status:"", events:[]};
-        fullDbData[key].status = mode; 
-        render(); 
-    }
+    const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
+    for(let i=0;i<firstDay;i++) grid.innerHTML += "<div></div>";
 
-    function openModal(key, dayNum) {
-        selectedKey = key; 
-        const dData = fullDbData[key] || {status:"", events:[]};
-        document.getElementById('modalTitle').innerText = `${dayNum}. ${date.getMonth()+1}.`;
-        const container = document.getElementById('eventInputs'); container.innerHTML = "";
-        dData.events.forEach(e => addEventInput(e)); document.getElementById('modal').style.display = 'flex';
-    }
-
-    function addEventInput(obj = {text:"", person:"JINÉ"}) {
-        const div = document.createElement('div'); div.className = 'modal-card';
-        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol...">
-            <div class="person-container">${persons.map(p => `<span class="person-btn ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
-            <button class="btn" style="background:#7f1d1d; width:100%;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
-        document.getElementById('eventInputs').appendChild(div);
-    }
-
-    async function saveData() {
-        if(!fullDbData[selectedKey]) fullDbData[selectedKey] = {status:"", events:[]};
-        fullDbData[selectedKey].events = Array.from(document.querySelectorAll('#eventInputs > div')).map(div => ({
-            text: div.querySelector('input').value, person: div.querySelector('.person-btn.active').innerText
-        }));
+    const days = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+    for(let i=1;i<=days;i++){
+        let data = JSON.parse(localStorage.getItem(dayKey(i)) || '{"status":"","events":[]}');
+        let d = document.createElement('div');
+        d.className = 'day' + (data.status ? ' '+data.status : '') + (data.events.length>0 ? ' has-notes':'');
         
-        await _supabase.from('planovac').upsert({ id: 'hlavni', data: fullDbData });
-        document.getElementById('modal').style.display = 'none';
-        render();
-    }
+        if(i===new Date().getDate() && date.getMonth()===new Date().getMonth() && date.getFullYear()===new Date().getFullYear()) {
+            d.classList.add('today');
+        }
 
-    function updateAgenda() {
-        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
-        Object.keys(fullDbData).forEach(key => {
-            if(key.startsWith(`${date.getFullYear()}-${date.getMonth()}`)) {
-                fullDbData[key].events.forEach(e => {
-                    list.innerHTML += `<div class="agenda-item color-${e.person}"><b>${key.split('-')[2]}.</b> &nbsp; ${e.person}: ${e.text}</div>`;
-                });
-            }
+        d.innerText = i;
+
+        d.onmousedown = e => { e.preventDefault(); if(!isLocked){ isMouseDown=true; paint(d,i); } else openModal(i,data); };
+        d.ontouchstart = e => { e.preventDefault(); if(!isLocked){ isMouseDown=true; paint(d,i); } else openModal(i,data); };
+        d.onmouseenter = () => { if(isMouseDown) paint(d,i); };
+
+        grid.appendChild(d);
+    }
+    updateTaskList();
+}
+
+function dayKey(i){
+    return `d-${date.getFullYear()}-${date.getMonth()}-${i}`;
+}
+
+function paint(el,i){
+    let data = JSON.parse(localStorage.getItem(dayKey(i)) || '{"status":"","events":[]}');
+    data.status = mode;
+    el.className = 'day '+mode+(data.events.length>0?' has-notes':'');
+    localStorage.setItem(dayKey(i), JSON.stringify(data));
+    updateTaskList();
+}
+
+function toggleMarkMenu(){
+    const m = document.getElementById('markMenu');
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleLock(){
+    isLocked = !isLocked;
+    document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓";
+}
+
+function setMode(m){ mode = m; }
+
+function changeMonth(dir){ date.setMonth(date.getMonth()+dir); render(); }
+
+window.onmouseup = () => isMouseDown=false;
+
+function addEventInput(obj={text:"",person:"JINÉ"}){
+    const div = document.createElement('div');
+    div.className = 'modal-card';
+    div.innerHTML = `
+        <input value="${obj.text}" class="evt-input" placeholder="Úkol">
+        <div class="person-container">
+            ${persons.map(p=>`<span class="person-btn p-${p} ${p===obj.person?'active':''}"
+                onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active'));
+                this.classList.add('active')">${p}</span>`).join('')}
+        </div>
+        <button class="btn" style="background:#7f1d1d;" onclick="this.parentElement.remove()">Smazat úkol</button>
+    `;
+    document.getElementById('eventInputs').appendChild(div);
+}
+
+function openModal(day,data){
+    selectedDay = day;
+    document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;
+    document.getElementById('eventInputs').innerHTML = "";
+    data.events.forEach(e=>addEventInput(e));
+    document.getElementById('modal').style.display='flex';
+}
+
+function saveData(){
+    let events=[];
+    document.querySelectorAll('.modal-card').forEach(card=>{
+        let active = card.querySelector('.person-btn.active');
+        events.push({ text:card.querySelector('.evt-input').value, person:active?active.innerText:"JINÉ" });
+    });
+    let data = JSON.parse(localStorage.getItem(dayKey(selectedDay)) || '{"status":"","events":[]}');
+    data.events = events;
+    localStorage.setItem(dayKey(selectedDay), JSON.stringify(data));
+    document.getElementById('modal').style.display='none';
+    render();
+}
+
+function updateTaskList(){
+    const list = document.getElementById('taskList');
+    list.innerHTML = "<strong>Agenda:</strong>";
+    const days = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+    for(let i=1;i<=days;i++){
+        let data = JSON.parse(localStorage.getItem(dayKey(i)) || '{"events":[]}');
+        data.events.forEach(e=>{
+            list.innerHTML += `<div class="p-${e.person}" style="padding:8px; margin:4px 0; border-radius:4px; color:white;">
+                <b>${i}.</b> ${e.person}: ${e.text}
+            </div>`;
         });
     }
+}
 
-    function toggleMenu() { const menu = document.getElementById('modeMenu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
-    function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
-    function setMode(m) { mode = m; }
-    function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
-    
-    loadFromDB(); // Spustit načítání při startu
+/* --- Supabase sync --- */
+
+async function syncToSupabase(){
+    if(!window.supabaseClient){ alert('Supabase není nastavený.'); return; }
+    const days = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+    const payload = {};
+    for(let i=1;i<=days;i++){
+        payload[i] = JSON.parse(localStorage.getItem(dayKey(i)) || '{"status":"","events":[]}');
+    }
+    const { error } = await saveMonthToSupabase(date.getFullYear(), date.getMonth(), payload);
+    document.getElementById('syncInfo').innerText = error ? 'Chyba syncu do Supabase.' : 'Data měsíce uložena v Supabase.';
+}
+
+async function loadFromSupabase(){
+    if(!window.supabaseClient){ alert('Supabase není nastavený.'); return; }
+    const { data, error } = await loadMonthFromSupabase(date.getFullYear(), date.getMonth());
+    if(error || !data){ document.getElementById('syncInfo').innerText = 'Nepodařilo se načíst data ze Supabase.'; return; }
+    const daysData = data.data || {};
+    Object.keys(daysData).forEach(d=>{
+        localStorage.setItem(dayKey(d), JSON.stringify(daysData[d]));
+    });
+    document.getElementById('syncInfo').innerText = 'Načteno ze Supabase.';
+    render();
+}
+
+render();
 </script>
 </body>
 </html>

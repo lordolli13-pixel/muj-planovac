@@ -12,7 +12,6 @@
         .panel { background: var(--panel); padding: 12px; border-radius: 8px; border: 1px solid #333; }
         .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
         .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; position: relative; }
-        .day.today { border: 1px solid #fff; }
         .day.has-notes { border-bottom: 4px solid #ffffff; }
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
         #editPanel { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
@@ -28,121 +27,121 @@
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="panel">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <button class="btn" onclick="changeMonth(-1)">◀</button>
-                <div id="monthLabel" style="font-weight:bold;"></div>
-                <button class="btn" onclick="changeMonth(1)">▶</button>
-            </div>
-            <div class="grid" id="calendarGrid"></div>
+<div class="wrapper">
+    <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn" onclick="changeMonth(-1)">◀</button>
+            <div id="monthLabel" style="font-weight:bold;"></div>
+            <button class="btn" onclick="changeMonth(1)">▶</button>
         </div>
-        <div class="panel">
-            <button class="btn" style="width:100%; background:#4a4a4a;" onclick="toggleEdit()">✏ Editace režimu</button>
-            <div id="editPanel">
-                <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
-                <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
-                <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
-                <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
-            </div>
-        </div>
-        <div class="panel" id="taskList" style="font-size: 0.9rem;"></div>
+        <div class="grid" id="calendarGrid"></div>
     </div>
-    <div id="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle">Události dne</h3>
-            <div id="eventInputs"></div>
-            <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669;">+ Přidat úkol</button>
-            <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e; margin-top:10px;">Uložit vše</button>
-            <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444; margin-top:10px;">Zavřít</button>
+    <div class="panel">
+        <button class="btn" style="width:100%; background:#4a4a4a;" onclick="toggleEdit()">✏ Editace režimu</button>
+        <div id="editPanel">
+            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
+            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
+            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
+            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
         </div>
     </div>
+    <div class="panel" id="taskList" style="font-size: 0.9rem;"></div>
+</div>
 
-    <script>
-        // --- ZDE VLOŽ SVÉ ÚDAJE ZE SUPABASE ---
-        const supabase = supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co/rest/v1/', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
-        
-        const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
-        let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isMouseDown = false;
+<div id="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Události dne</h3>
+        <div id="eventInputs"></div>
+        <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669;">+ Přidat úkol</button>
+        <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e; margin-top:10px;">Uložit vše</button>
+        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444; margin-top:10px;">Zavřít</button>
+    </div>
+</div>
 
-        async function loadData() { 
+<script>
+    // --- ZDE VLOŽ SVÉ ÚDAJE ZE SUPABASE ---
+    const supabase = supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co/rest/v1/', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
+    
+    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
+    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isMouseDown = false;
+
+    async function loadData() {
+        try {
             const { data } = await supabase.from('planovac').select('data').eq('id', 'hlavni').single();
-            if(data && data.data) allData = data.data;
-            render(); 
+            if (data && data.data) allData = data.data;
+        } catch (e) { console.error("Chyba načítání:", e); }
+        render();
+    }
+
+    async function saveCloud() {
+        await supabase.from('planovac').upsert({ id: 'hlavni', data: allData });
+        render();
+    }
+
+    function render() {
+        const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
+        document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
+        const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
+        for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+        const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        for(let i=1; i<=days; i++) {
+            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
+            let item = allData[key] || {status:"", events:[]};
+            let d = document.createElement('div');
+            d.className = 'day ' + (item.status || '') + (item.events.length > 0 ? ' has-notes' : '');
+            d.innerText = i;
+            d.onmousedown = () => { if(!isLocked) { isMouseDown = true; applyMode(d, key, item); } else openModal(i, item); };
+            d.onmouseenter = () => { if(isMouseDown && !isLocked) applyMode(d, key, item); };
+            d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown = true; applyMode(d, key, item); } else openModal(i, item); };
+            grid.appendChild(d);
         }
+        updateTaskList();
+    }
 
-        async function saveCloud() { 
-            await supabase.from('planovac').upsert({ id: 'hlavni', data: allData });
-            render(); 
-        }
+    function applyMode(el, key, item) {
+        item.status = mode; allData[key] = item;
+        el.className = 'day ' + mode + (item.events.length > 0 ? ' has-notes' : '');
+        saveCloud();
+    }
 
-        function render() {        
-            const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";        
-            document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});        
-            const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;        
-            for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';        
-            const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();        
-            for(let i=1; i<=days; i++) {            
-                let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;            
-                let item = allData[key] || {status:"", events:[]};            
-                let d = document.createElement('div');            
-                d.className = 'day ' + (item.status || '') + (item.events.length > 0 ? ' has-notes' : '');            
-                d.innerText = i;            
-                d.onmousedown = () => { if(!isLocked) { isMouseDown = true; applyMode(d, key, item); } else openModal(i, item); };            
-                d.onmouseenter = () => { if(isMouseDown && !isLocked) applyMode(d, key, item); };            
-                d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown = true; applyMode(d, key, item); } else openModal(i, item); };            
-                grid.appendChild(d);        
-            }        
-            updateTaskList();    
-        }
+    function openModal(day, item) {
+        selectedDay = day; document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;
+        document.getElementById('eventInputs').innerHTML = ""; item.events.forEach(e => addEventInput(e));
+        document.getElementById('modal').style.display = 'flex';
+    }
 
-        function applyMode(el, key, item) {        
-            item.status = mode; allData[key] = item;        
-            el.className = 'day ' + mode + (item.events.length > 0 ? ' has-notes' : '');        
-            saveCloud();    
-        }
+    function saveData() {
+        let events = []; document.querySelectorAll('.modal-card').forEach(card => {
+            let active = card.querySelector('.person-btn.active');
+            events.push({ text: card.querySelector('.evt-input').value, person: active ? active.innerText : "JINÉ" });
+        });
+        let key = `${date.getFullYear()}-${date.getMonth()}-${selectedDay}`;
+        allData[key] = { ...allData[key], events: events }; document.getElementById('modal').style.display = 'none'; saveCloud();
+    }
 
-        window.onmouseup = () => isMouseDown = false; window.ontouchend = () => isMouseDown = false;    
-        
-        function openModal(day, item) {        
-            selectedDay = day; document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;        
-            document.getElementById('eventInputs').innerHTML = ""; item.events.forEach(e => addEventInput(e));        
-            document.getElementById('modal').style.display = 'flex';    
-        }    
+    function addEventInput(obj = {text:"", person:"JINÉ"}) {
+        const div = document.createElement('div'); div.className = 'modal-card';
+        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">
+            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
+            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
+        document.getElementById('eventInputs').appendChild(div);
+    }
 
-        function saveData() {        
-            let events = []; document.querySelectorAll('.modal-card').forEach(card => {            
-                let active = card.querySelector('.person-btn.active');            
-                events.push({ text: card.querySelector('.evt-input').value, person: active ? active.innerText : "JINÉ" });        
-            });        
-            let key = `${date.getFullYear()}-${date.getMonth()}-${selectedDay}`;        
-            allData[key] = { ...allData[key], events: events }; document.getElementById('modal').style.display = 'none'; saveCloud();    
-        }    
+    function updateTaskList() {
+        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
+        Object.keys(allData).sort().forEach(key => {
+            (allData[key].events || []).forEach(e => {
+                list.innerHTML += `<div class="p-${e.person}" style="padding:6px; margin:4px 0; border-radius:4px; color:white; font-size:0.85rem;"><b>${key.split('-')[2]}.</b> ${e.person}: ${e.text}</div>`;
+            });
+        });
+    }
 
-        function addEventInput(obj = {text:"", person:"JINÉ"}) {        
-            const div = document.createElement('div'); div.className = 'modal-card';        
-            div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">            
-            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>            
-            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;        
-            document.getElementById('eventInputs').appendChild(div);    
-        }    
+    function toggleEdit() { document.getElementById('editPanel').style.display = (document.getElementById('editPanel').style.display === 'flex') ? 'none' : 'flex'; }
+    function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
+    function setMode(m) { mode = m; }
+    function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
 
-        function updateTaskList() {        
-            const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";        
-            Object.keys(allData).sort().forEach(key => {            
-                let den = key.split('-')[2];            
-                (allData[key].events || []).forEach(e => {                
-                    list.innerHTML += `<div class="p-${e.person}" style="padding:6px; margin:4px 0; border-radius:4px; color:white; font-size:0.85rem;"><b>${den}.</b> ${e.person}: ${e.text}</div>`;            
-                });        
-            });    
-        }    
-
-        function toggleEdit() { document.getElementById('editPanel').style.display = (document.getElementById('editPanel').style.display === 'flex') ? 'none' : 'flex'; }    
-        function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }    
-        function setMode(m) { mode = m; }    
-        function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }    
-        
-        loadData();
-    </script>
+    loadData();
+</script>
 </body>
 </html>

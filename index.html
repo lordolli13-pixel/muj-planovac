@@ -2,72 +2,64 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plánovač 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #121212; color: #fff; font-family: sans-serif; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .wrapper { width: 100%; max-width: 500px; }
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
-        .day { aspect-ratio: 1; background: #333; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; }
-        .btn { padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
+        body { background: #121212; color: #fff; font-family: sans-serif; padding: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day { aspect-ratio: 1; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .day:hover { background: #555; }
+        .btn { padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <div id="log" style="color: yellow; font-size: 0.8rem;">Připojuji se...</div>
+    <div id="log">Načítám...</div>
     <div class="grid" id="grid"></div>
-    <button class="btn" onclick="saveToDB()">Uložit data do Supabase</button>
-</div>
+    <button class="btn" onclick="saveToDB()">Uložit vše do databáze</button>
 
-<script>
-    // TVOJE ÚDAJE
-    const _supabase = window.supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
-    let allData = {};
+    <script>
+        const _supabase = window.supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
+        let allData = {};
 
-    // 1. Vykreslení kalendáře
-    function render() {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = "";
-        for(let i = 1; i <= 30; i++) {
-            let div = document.createElement('div');
-            div.className = 'day';
-            div.innerText = i;
-            div.onclick = () => alert("Kliknuto na den: " + i);
-            grid.appendChild(div);
+        function render() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = "";
+            for(let i = 1; i <= 30; i++) {
+                let div = document.createElement('div');
+                div.className = 'day';
+                div.innerHTML = `<b>${i}</b><span>${allData[i] || ""}</span>`;
+                // Po kliknutí se zeptá na poznámku
+                div.onclick = () => {
+                    let text = prompt("Poznámka pro " + i + ". den:", allData[i] || "");
+                    if (text !== null) {
+                        allData[i] = text;
+                        render(); // Překreslí kalendář s novým textem
+                    }
+                };
+                grid.appendChild(div);
+            }
         }
-    }
 
-    // 2. Načtení dat
-    async function loadData() {
-        try {
-            const { data, error } = await _supabase.from('planovac').select('*');
-            if (error) {
-                document.getElementById('log').innerText = "Chyba DB: " + error.message;
-            } else if (data && data.length > 0) {
-                document.getElementById('log').innerText = "Data načtena úspěšně.";
-                allData = data[0].data || {};
-                console.log("Načtená data:", allData);
+        async function loadData() {
+            const { data } = await _supabase.from('planovac').select('*').eq('id', 'hlavni').single();
+            if (data) {
+                allData = data.data || {};
+                document.getElementById('log').innerText = "Data načtena.";
                 render();
             } else {
-                document.getElementById('log').innerText = "Databáze je prázdná.";
+                document.getElementById('log').innerText = "Vítejte, klikněte na den a začněte.";
                 render();
             }
-        } catch(e) {
-            document.getElementById('log').innerText = "Fatal: " + e.message;
         }
-    }
 
-    // 3. Uložení dat
-    async function saveToDB() {
-        const { error } = await _supabase.from('planovac').upsert({ id: 'hlavni', data: { test: "data" } });
-        if (error) alert("Chyba při ukládání: " + error.message);
-        else alert("Uloženo!");
-    }
+        async function saveToDB() {
+            document.getElementById('log').innerText = "Ukládám...";
+            const { error } = await _supabase.from('planovac').upsert({ id: 'hlavni', data: allData });
+            document.getElementById('log').innerText = error ? "Chyba: " + error.message : "Uloženo!";
+        }
 
-    loadData();
-</script>
-
+        loadData();
+    </script>
 </body>
 </html>

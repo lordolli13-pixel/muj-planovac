@@ -3,23 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plánovač 2026</title>
+    <title>Mobilní Plánovač 2026</title>
     <style>
         :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
         .wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
         .panel { background: var(--panel); padding: 12px; border-radius: 8px; border: 1px solid #333; }
         .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
-        .day-name { text-align: center; font-size: 0.7rem; color: #888; padding-bottom: 5px; }
         .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; }
+        .day.today { border: 1px solid #fff; }
         .day.has-notes { border-bottom: 4px solid #ffffff; }
         .day.prace { background: #8b0000; } .day.dovolena { background: #8b7500; } .day.volno { background: #006400; }
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
-        #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; justify-content:center; z-index:100; }
-        .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; }
-        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; }
-        .person-btn { padding: 8px; border: 1px solid #555; cursor: pointer; margin: 2px; opacity: 0.5; }
-        .person-btn.active { opacity: 1; border-color: #fff; }
+        #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; z-index:100; }
+        .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-radius: 15px 15px 0 0; }
+        .modal-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #444; }
+        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+        .person-container { display: flex; gap: 5px; margin-bottom: 10px; }
+        .person-btn { padding: 8px; font-size: 0.7rem; border: 2px solid transparent; color: white; flex: 1; text-align: center; border-radius: 4px; opacity: 0.5; cursor: pointer; }
+        .person-btn.active { opacity: 1; border-color: #fff; font-weight: bold; }
+        .hidden-menu { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
+        .agenda-item { padding: 8px; margin: 4px 0; border-radius: 4px; color: white; display: flex; align-items: center; background: #2a2a2a; }
+        .color-OLDA { border-left: 5px solid #4b5563; }
+        .color-JÁŠA { border-left: 5px solid #20b2aa; }
+        .color-AISHA { border-left: 5px solid #9d174d; }
+        .color-JINÉ { border-left: 5px solid #374151; }
     </style>
 </head>
 <body>
@@ -30,61 +38,93 @@
             <div id="monthLabel" style="font-weight:bold;"></div>
             <button class="btn" onclick="changeMonth(1)">▶</button>
         </div>
-        <div class="grid" id="calendarGrid">Načítám...</div>
+        <div class="grid" id="calendarGrid"></div>
     </div>
     <div class="panel">
-        <button class="btn" style="width:100%; background:#059669;" onclick="loadData()">🔄 Obnovit data</button>
+        <button class="btn" style="width:100%" onclick="toggleMenu()">⚙️ Rozpis práce</button>
+        <div id="modeMenu" class="hidden-menu">
+            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
+            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
+            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
+            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
+        </div>
     </div>
+    <div class="panel" id="taskList" style="font-size: 0.85rem;"></div>
 </div>
 
 <div id="modal">
     <div class="modal-content">
-        <h3 id="modalTitle">Detaily</h3>
+        <h3 id="modalTitle"></h3>
         <div id="eventInputs"></div>
-        <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e;">Uložit</button>
-        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444;">Zavřít</button>
+        <button class="btn" style="width:100%; background:#059669" onclick="addEventInput()">+ Přidat úkol</button>
+        <button class="btn" style="width:100%; background:#005a9e" onclick="saveData()">Uložit vše</button>
+        <button class="btn" style="width:100%; background:#444" onclick="document.getElementById('modal').style.display='none'">Zavřít</button>
     </div>
 </div>
 
 <script>
-    
-    const SCRIPT_URL = 'ZDE_VLOZTE_VASI_URL_KONCICI_EXEC';
-    let date = new Date(), allData = {}, selectedDay = 1;
-
-    async function loadData() {
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const data = await response.json();
-            allData = data;
-            render();
-        } catch(e) {
-            document.getElementById('calendarGrid').innerText = "Chyba: " + e.message;
-        }
-    }
-
+    let date = new Date(), mode = 'prace', isLocked = true, isMouseDown = false, selectedKey = "";
+    const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
+    const API = {
+        fetchData: (key) => JSON.parse(localStorage.getItem(key) || '{"status":"","events":[]}'),
+        saveData: (key, data) => { localStorage.setItem(key, JSON.stringify(data)); render(); }
+    };
     function render() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
-        ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
         document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
-        
-        const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
-        for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
-        
         const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const start = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
+        for(let i=0; i<start; i++) grid.innerHTML += '<div></div>';
         for(let i=1; i<=days; i++) {
-            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
-            let d = document.createElement('div');
-            d.className = 'day ' + (allData[key]?.status || '');
+            const key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
+            const data = API.fetchData(key);
+            const d = document.createElement('div');
+            d.className = `day ${data.status} ${data.events.length ? 'has-notes' : ''}`;
             d.innerText = i;
-            d.onclick = () => alert("V tento den: " + (allData[key]?.status || "nic"));
+            d.onmousedown = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown=true; paint(key, d); } else openModal(key, i); };
+            d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown=true; paint(key, d); } else openModal(key, i); };
+            d.onmouseenter = () => { if(isMouseDown) paint(key, d); };
             grid.appendChild(d);
         }
+        updateAgenda();
     }
-
+    function paint(key, el) { let data = API.fetchData(key); data.status = mode; API.saveData(key, data); }
+    function toggleMenu() { const menu = document.getElementById('modeMenu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
+    function openModal(key, dayNum) {
+        selectedKey = key; const data = API.fetchData(key);
+        document.getElementById('modalTitle').innerText = `${dayNum}. ${date.getMonth()+1}.`;
+        const container = document.getElementById('eventInputs'); container.innerHTML = "";
+        data.events.forEach(e => addEventInput(e)); document.getElementById('modal').style.display = 'flex';
+    }
+    function addEventInput(obj = {text:"", person:"JINÉ"}) {
+        const div = document.createElement('div'); div.className = 'modal-card';
+        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol...">
+            <div class="person-container">${persons.map(p => `<span class="person-btn ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
+            <button class="btn" style="background:#7f1d1d; width:100%;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
+        document.getElementById('eventInputs').appendChild(div);
+    }
+    function saveData() {
+        let data = API.fetchData(selectedKey);
+        data.events = Array.from(document.querySelectorAll('#eventInputs > div')).map(div => ({
+            text: div.querySelector('input').value, person: div.querySelector('.person-btn.active').innerText
+        }));
+        API.saveData(selectedKey, data); document.getElementById('modal').style.display = 'none';
+    }
+    function updateAgenda() {
+        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
+        const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        for(let i=1; i<=days; i++) {
+            const data = API.fetchData(`${date.getFullYear()}-${date.getMonth()}-${i}`);
+            data.events.forEach(e => {
+                list.innerHTML += `<div class="agenda-item color-${e.person}"><b style="margin-right:8px;">${i}.</b> <span style="font-weight:bold; margin-right:8px;">${e.person}:</span> <span>${e.text}</span></div>`;
+            });
+        }
+    }
+    function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
+    function setMode(m) { mode = m; }
     function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
-    
-    // Spuštění
-    loadData();
+    window.onmouseup = () => isMouseDown = false;
+    render();
 </script>
 </body>
 </html>

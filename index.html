@@ -15,10 +15,10 @@
     <div class="grid" id="grid"></div>
 
     <script>
-        // TVOJE ÚDAJE
-        const supabase = supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
+        // Opravená inicializace
+        const _supabase = window.supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
         
-        // Vykreslíme kalendář HNED, bez čekání na databázi
+        // Vykreslení kalendáře
         const grid = document.getElementById('grid');
         for(let i=1; i<=30; i++) {
             let div = document.createElement('div');
@@ -26,17 +26,17 @@
             grid.appendChild(div);
         }
 
-        // Teprve teď zkusíme načíst data
+        // Test spojení
         async function load() {
             try {
-                const { data, error } = await supabase.from('planovac').select('*').eq('id', 'hlavni').single();
+                const { data, error } = await _supabase.from('planovac').select('*').eq('id', 'hlavni').single();
                 if (error) {
                     document.getElementById('log').innerText = "Chyba DB: " + error.message;
                 } else {
                     document.getElementById('log').innerText = "Databáze připravena.";
                 }
             } catch(e) {
-                document.getElementById('log').innerText = "Fatální chyba: " + e;
+                document.getElementById('log').innerText = "Fatální chyba: " + e.message;
             }
         }
         load();

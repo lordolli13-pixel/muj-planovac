@@ -61,7 +61,7 @@
 
 <script>
     let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isMouseDown = false;
-    const SCRIPT_URL = 'URL_VASEHO_APPS_SCRIPTU'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwikgTehPTltNyftkc1niMfEXBRJ5ZhvFUsONURZhVQNc6EALqfQTDDhstEDwyhiaf2/exec'; 
     const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
 
     async function loadData() { try { const r = await fetch(SCRIPT_URL); allData = await r.json(); render(); } catch(e) { render(); } }

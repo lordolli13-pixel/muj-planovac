@@ -2,49 +2,44 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plánovač - Debug</title>
+    <title>Plánovač 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 20px; }
-        .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        body { background: #121212; color: #fff; font-family: sans-serif; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .day { aspect-ratio: 1; background: #333; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <h1>Kalendář (Test)</h1>
-    <div id="debugLog" style="color: yellow; margin-bottom: 10px;">Probíhá načítání...</div>
-    <div class="grid" id="calendarGrid"></div>
+    <div id="log" style="color: yellow;">Načítám...</div>
+    <div class="grid" id="grid"></div>
 
     <script>
-        // ZDE VLOŽ SVÉ ÚDAJE
-        const supabase = supabase.createClient('https://ncstippolhiaojmnzcgd.supabase.co/rest/v1/', 'sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE');
-        const grid = document.getElementById('calendarGrid');
-        const log = document.getElementById('debugLog');
+        // TVOJE ÚDAJE
+        const supabase = supabase.createClient('TVOJE_URL', 'TVŮJ_KLÍČ');
+        
+        // Vykreslíme kalendář HNED, bez čekání na databázi
+        const grid = document.getElementById('grid');
+        for(let i=1; i<=30; i++) {
+            let div = document.createElement('div');
+            div.className = 'day'; div.innerText = i;
+            grid.appendChild(div);
+        }
 
-        async function init() {
+        // Teprve teď zkusíme načíst data
+        async function load() {
             try {
-                log.innerText = "Zkouším se připojit...";
-                const { data, error } = await supabase.from('planovac').select('data').eq('id', 'hlavni').single();
-                
+                const { data, error } = await supabase.from('planovac').select('*').eq('id', 'hlavni').single();
                 if (error) {
-                    log.innerText = "CHYBA: " + error.message;
+                    document.getElementById('log').innerText = "Chyba DB: " + error.message;
                 } else {
-                    log.innerText = "ÚSPĚCH! Data načtena.";
-                    console.log("Data:", data);
+                    document.getElementById('log').innerText = "Databáze připravena.";
                 }
-            } catch (err) {
-                log.innerText = "FATÁLNÍ CHYBA: " + err;
-            }
-
-            // Vykreslení kalendáře (i kdyby se data nenačetla)
-            for(let i=1; i<=30; i++) {
-                let d = document.createElement('div');
-                d.className = 'day'; d.innerText = i;
-                grid.appendChild(d);
+            } catch(e) {
+                document.getElementById('log').innerText = "Fatální chyba: " + e;
             }
         }
-        init();
+        load();
     </script>
 </body>
 </html>

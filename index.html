@@ -6,6 +6,7 @@
     <title>Plánovač 2026</title>
     <link rel="manifest" href="manifest.json">
     <style>
+        /* CSS zůstává stejné jako minule */
         :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
         .wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
@@ -61,12 +62,29 @@
 
 <script>
     let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isMouseDown = false;
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwikgTehPTltNyftkc1niMfEXBRJ5ZhvFUsONURZhVQNc6EALqfQTDDhstEDwyhiaf2/exec'; 
+    const SCRIPT_URL = 'URL_VASEHO_APPS_SCRIPTU'; 
     const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
 
-    async function loadData() { try { const r = await fetch(SCRIPT_URL); allData = await r.json(); render(); } catch(e) { render(); } }
-    async function saveCloud() { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) }); render(); }
+    // Bleskové načtení z paměti telefonu + synchronizace na pozadí
+    function loadData() {
+        const cached = localStorage.getItem('planovacData');
+        if (cached) { allData = JSON.parse(cached); render(); }
+        
+        fetch(SCRIPT_URL).then(r => r.json()).then(newData => {
+            allData = newData;
+            localStorage.setItem('planovacData', JSON.stringify(allData));
+            render();
+        }).catch(e => console.log("Offline"));
+    }
 
+    // Okamžité uložení do telefonu + odeslání na Google na pozadí
+    function saveCloud() {
+        localStorage.setItem('planovacData', JSON.stringify(allData));
+        render();
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) }).catch(e => console.log("Synchronizace na pozadí selhala"));
+    }
+
+    // Funkce render, applyMode, atd. zůstávají shodné s předchozím kódem...
     function render() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
         document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
@@ -94,6 +112,8 @@
     }
 
     window.onmouseup = () => isMouseDown = false; window.ontouchend = () => isMouseDown = false;
+
+    // Ostatní funkce (openModal, saveData, atd.) jsou stejné jako minule...
     function openModal(day, data) {
         selectedDay = day; document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;
         document.getElementById('eventInputs').innerHTML = ""; data.events.forEach(e => addEventInput(e));
@@ -127,6 +147,7 @@
     function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
     function setMode(m) { mode = m; }
     function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
+
     loadData();
 </script>
 </body>

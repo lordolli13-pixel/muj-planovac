@@ -3,521 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobilní Plánovač 2026</title>
-
-    <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#0f172a">
-
+    <title>Plánovač 2026</title>
+    <link rel="manifest" href="manifest.json">
     <style>
-        :root {
-            --bg: #020617;
-            --bg-soft: #0f172a;
-            --panel: #020617;
-            --panel-soft: #0f172a;
-            --accent: #38bdf8;
-            --accent-soft: rgba(56, 189, 248, 0.25);
-            --text: #e5e7eb;
-            --muted: #9ca3af;
-            --border: rgba(148, 163, 184, 0.35);
-            --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
-            --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-            --radius-lg: 18px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --transition-fast: 0.18s ease-out;
-            --transition-med: 0.25s ease-out;
-        }
-
-        body.light {
-            --bg: #f3f4f6;
-            --bg-soft: #e5e7eb;
-            --panel: #ffffff;
-            --panel-soft: #f9fafb;
-            --accent: #0ea5e9;
-            --accent-soft: rgba(14, 165, 233, 0.18);
-            --text: #111827;
-            --muted: #6b7280;
-            --border: rgba(209, 213, 219, 0.9);
-            --shadow-soft: 0 18px 40px rgba(148, 163, 184, 0.45);
-            --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            padding: 16px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at top, #0f172a 0, var(--bg) 55%, #020617 100%);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            transition: background var(--transition-med), color var(--transition-med);
-        }
-
-        body.light {
-            background: radial-gradient(circle at top, #e5e7eb 0, var(--bg) 55%, #d1d5db 100%);
-        }
-
-        .wrapper {
-            width: 100%;
-            max-width: 520px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .app-title {
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .pill {
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            background: linear-gradient(135deg, var(--panel-soft), var(--panel));
-            box-shadow: var(--shadow-inner);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        .pill-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-soft);
-        }
-
-        .panel {
-            background: radial-gradient(circle at top left, var(--panel-soft), var(--panel));
-            padding: 14px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-soft);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .panel::before {
-            content: "";
-            position: absolute;
-            inset: -40%;
-            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.06), transparent 55%);
-            opacity: 0.9;
-            pointer-events: none;
-        }
-
-        .panel-inner { position: relative; z-index: 1; }
-
-        .btn {
-            padding: 10px 12px;
-            border-radius: var(--radius-md);
-            border: 1px solid transparent;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--text);
-            background: linear-gradient(135deg, #111827, #020617);
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
-        }
-
-        body.light .btn {
-            background: linear-gradient(135deg, #f9fafb, #e5e7eb);
-            box-shadow: 0 10px 25px rgba(148, 163, 184, 0.6);
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.9);
-        }
-
-        body.light .btn:hover {
-            box-shadow: 0 14px 30px rgba(148, 163, 184, 0.9);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.7);
-            opacity: 0.9;
-        }
-
-        .btn-ghost {
-            background: transparent;
-            border-color: var(--border);
-            box-shadow: none;
-        }
-
-        .btn-accent {
-            background: linear-gradient(135deg, #0ea5e9, #22c55e);
-            color: #0b1120;
-        }
-
-        .btn-small { padding: 8px 10px; font-size: 0.8rem; }
-        .btn-icon { width: 40px; height: 40px; border-radius: 999px; padding: 0; }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .month-label { font-weight: 600; font-size: 1rem; letter-spacing: 0.03em; }
-        .month-sub { font-size: 0.75rem; color: var(--muted); }
-
-        .calendar-weekdays {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-top: 10px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--muted);
-        }
-
-        .calendar-weekdays span { text-align: center; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-top: 8px;
-        }
-
-        .day {
-            aspect-ratio: 1;
-            border-radius: var(--radius-sm);
-            background: radial-gradient(circle at top left, #111827, #020617);
-            border: 1px solid rgba(31, 41, 55, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            color: var(--text);
-            position: relative;
-            overflow: hidden;
-            user-select: none;
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
-        }
-
-        body.light .day {
-            background: radial-gradient(circle at top left, #f9fafb, #e5e7eb);
-            border-color: rgba(209, 213, 219, 0.9);
-        }
-
-        .day:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(15, 23, 42, 0.7); }
-        body.light .day:hover { box-shadow: 0 10px 20px rgba(148, 163, 184, 0.7); }
-
-        .day-number { font-weight: 600; }
-        .day-badge { font-size: 0.65rem; margin-top: 2px; color: var(--muted); }
-
-        .day.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft), 0 12px 26px rgba(56, 189, 248, 0.5); }
-
-        .day.has-notes::after {
-            content: "";
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            height: 3px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #22c55e, #0ea5e9);
-            opacity: 0.9;
-        }
-
-        .day.prace { background: linear-gradient(135deg, #450a0a, #7f1d1d); border-color: rgba(248, 113, 113, 0.7); }
-        .day.dovolena { background: linear-gradient(135deg, #78350f, #b45309); border-color: rgba(251, 191, 36, 0.7); }
-        .day.volno { background: linear-gradient(135deg, #064e3b, #15803d); border-color: rgba(52, 211, 153, 0.7); }
-
-        .mode-menu-toggle { width: 100%; }
-        .hidden-menu { display: none; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
-
-        .mode-btn { flex: 1; min-width: 0; }
-        .mode-btn-prace { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
-        .mode-btn-dovolena { background: linear-gradient(135deg, #92400e, #f59e0b); }
-        .mode-btn-volno { background: linear-gradient(135deg, #166534, #22c55e); }
-        .lock-btn { width: 46px; }
-
-        #taskList { font-size: 0.85rem; }
-
-        .agenda-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .agenda-title { font-weight: 600; font-size: 0.9rem; }
-
-        .agenda-item {
-            padding: 9px 10px; margin: 4px 0; border-radius: var(--radius-md); color: var(--text);
-            display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #020617, #0f172a);
-            border: 1px solid rgba(31, 41, 55, 0.9); position: relative; overflow: hidden;
-            animation: fadeInUp 0.25s ease-out;
-        }
-        body.light .agenda-item { background: linear-gradient(135deg, #ffffff, #f3f4f6); border-color: rgba(209, 213, 219, 0.9); }
-
-        .agenda-day { font-weight: 700; font-size: 0.85rem; }
-        .agenda-person { font-weight: 600; font-size: 0.8rem; }
-        .agenda-text { flex: 1; font-size: 0.8rem; }
-        .agenda-pill { font-size: 0.7rem; padding: 3px 7px; border-radius: 999px; background: rgba(15, 23, 42, 0.8); color: var(--muted); }
-
-        .color-OLDA { border-left: 4px solid #4b5563; }
-        .color-JÁŠA { border-left: 4px solid #22c55e; }
-        .color-AISHA { border-left: 4px solid #ec4899; }
-        .color-JINÉ { border-left: 4px solid #64748b; }
-
-        #modal {
-            display: none; position: fixed; inset: 0; background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98));
-            align-items: flex-end; z-index: 100; backdrop-filter: blur(10px);
-        }
-
-        .modal-content {
-            background: radial-gradient(circle at top left, var(--panel-soft), var(--panel));
-            width: 100%; max-height: 90vh; overflow-y: auto; padding: 18px; border-radius: 22px 22px 0 0;
-            border-top: 1px solid var(--border); box-shadow: 0 -18px 40px rgba(15, 23, 42, 0.9);
-            animation: slideUp 0.25s ease-out; position: relative;
-        }
-
-        .modal-handle { width: 46px; height: 4px; border-radius: 999px; background: rgba(148, 163, 184, 0.6); margin: 0 auto 10px; }
-        .modal-title-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-        .modal-title { font-size: 1rem; font-weight: 600; }
-        .modal-sub { font-size: 0.75rem; color: var(--muted); }
-
-        .modal-card {
-            background: linear-gradient(135deg, #020617, #0f172a); padding: 12px; border-radius: var(--radius-md);
-            margin-bottom: 10px; border-left: 4px solid #334155; border-right: 1px solid rgba(15, 23, 42, 0.9);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.8); position: relative; animation: fadeInUp 0.2s ease-out;
-        }
-
-        .evt-input {
-            width: 100%; background: rgba(15, 23, 42, 0.9); color: var(--text); border: 1px solid rgba(55, 65, 81, 0.9);
-            padding: 10px; border-radius: var(--radius-sm); font-size: 0.85rem; outline: none; margin-bottom: 8px;
-        }
-        .evt-notify { width: 100%; background: rgba(15, 23, 42, 0.8); color: var(--text); border: 1px dashed rgba(55, 65, 81, 0.7); padding: 8px; border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 0.8rem; }
-        
-        .person-container { display: flex; gap: 6px; margin-bottom: 8px; }
-        .person-btn {
-            padding: 7px 6px; font-size: 0.7rem; border-radius: 999px; border: 1px solid transparent; color: var(--text);
-            flex: 1; text-align: center; opacity: 0.5; cursor: pointer; background: rgba(15, 23, 42, 0.9);
-        }
-        .person-btn.active { opacity: 1; border-color: var(--accent); background: linear-gradient(135deg, #0ea5e9, #22c55e); color: #0b1120; transform: translateY(-1px); }
-
-        .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeInUp { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        :root { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .wrapper { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+        .panel { background: var(--panel); padding: 12px; border-radius: 8px; border: 1px solid #333; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; }
+        .day { aspect-ratio: 1; background: #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; user-select: none; position: relative; }
+        .day.today { border: 1px solid #fff; }
+        .day.has-notes { border-bottom: 4px solid #ffffff; } 
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; background: #333; margin: 2px; font-size: 1rem; }
+        #editPanel { display: none; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 10px; }
+        .day.prace { background: #8b0000; } .day.dovolena { background: #8b7500; } .day.volno { background: #006400; }
+        #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); align-items:flex-end; justify-content:center; z-index:100; }
+        .modal-content { background: #1e1e1e; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; border-top-left-radius: 15px; border-top-right-radius: 15px; }
+        .modal-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #444; }
+        .evt-input { width: 100%; background: #111; color: white; border: 1px solid #444; padding: 12px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-size: 1rem; }
+        .person-container { display: flex; gap: 5px; }
+        .person-btn { padding: 10px 5px; font-size: 0.8rem; cursor: pointer; border: 2px solid transparent; color: white; flex: 1; text-align: center; border-radius: 6px; opacity: 0.6; }
+        .person-btn.active { opacity: 1; border-color: #fff; font-weight: bold; }
+        .p-OLDA { background-color: #4b5563 !important; } .p-JÁŠA { background-color: #20b2aa !important; } .p-AISHA { background-color: #9d174d !important; } .p-JINÉ { background-color: #374151 !important; }
     </style>
 </head>
 <body>
 <div class="wrapper">
-    <div class="app-header">
-        <div>
-            <div class="app-title">Mobilní plánovač 2026</div>
-            <div class="pill">
-                <span class="pill-dot"></span>
-                <span>Offline &amp; PWA + notifikace</span>
-            </div>
-        </div>
-        <button id="themeToggleBtn" class="btn btn-small btn-ghost">
-            <span class="theme-toggle">
-                <span class="theme-toggle-icon" id="themeIcon">🌙</span>
-                <span id="themeLabel">Tmavý režim</span>
-            </span>
-        </button>
-    </div>
-
     <div class="panel">
-        <div class="panel-inner">
-            <div class="calendar-header">
-                <button class="btn btn-icon btn-ghost" onclick="changeMonth(-1)">◀</button>
-                <div>
-                    <div id="monthLabel" class="month-label"></div>
-                    <div id="monthSubLabel" class="month-sub"></div>
-                </div>
-                <button class="btn btn-icon btn-ghost" onclick="changeMonth(1)">▶</button>
-            </div>
-            <div class="calendar-weekdays">
-                <span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span>So</span><span>Ne</span>
-            </div>
-            <div class="grid" id="calendarGrid"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn" onclick="changeMonth(-1)">◀</button>
+            <div id="monthLabel" style="font-weight:bold;"></div>
+            <button class="btn" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="grid" id="calendarGrid"></div>
+    </div>
+    <div class="panel">
+        <button class="btn" style="width:100%; background:#4a4a4a;" onclick="toggleEdit()">✏ Editace režimu</button>
+        <div id="editPanel">
+            <button class="btn" onclick="setMode('prace')" style="background:#8b0000; flex:1">Práce</button>
+            <button class="btn" onclick="setMode('dovolena')" style="background:#8b7500; flex:1">Dov.</button>
+            <button class="btn" onclick="setMode('volno')" style="background:#006400; flex:1">Volno</button>
+            <button class="btn" id="lockBtn" onclick="toggleLock()" style="width:50px">🔒</button>
         </div>
     </div>
-
-    <div class="panel">
-        <div class="panel-inner">
-            <button class="btn mode-menu-toggle" onclick="toggleMenu()">
-                ⚙️ Rozpis práce &nbsp;<span style="font-size:0.8rem; color:var(--muted);">(malování po dnech)</span>
-            </button>
-            <div id="modeMenu" class="hidden-menu">
-                <button class="btn mode-btn mode-btn-prace" onclick="setMode('prace')">Práce</button>
-                <button class="btn mode-btn mode-btn-dovolena" onclick="setMode('dovolena')">Dovolená</button>
-                <button class="btn mode-btn mode-btn-volno" onclick="setMode('volno')">Volno</button>
-                <button class="btn btn-ghost lock-btn" id="lockBtn" onclick="toggleLock()">🔒</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="panel-inner" id="taskList"></div>
-    </div>
+    <div class="panel" id="taskList" style="font-size: 0.9rem;"></div>
 </div>
 
 <div id="modal">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-handle"></div>
-        <div class="modal-title-row">
-            <h3 id="modalTitle" class="modal-title"></h3>
-            <div id="modalSub" class="modal-sub"></div>
-        </div>
+    <div class="modal-content">
+        <h3 id="modalTitle">Události dne</h3>
         <div id="eventInputs"></div>
-        <div class="modal-actions">
-            <button class="btn btn-accent" onclick="addEventInput()">+ Přidat úkol</button>
-            <button class="btn" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)" onclick="saveData()">💾 Uložit den</button>
-            <button class="btn btn-ghost" onclick="closeModal()">Zavřít</button>
-        </div>
+        <button class="btn" onclick="addEventInput()" style="width:100%; background:#059669;">+ Přidat úkol</button>
+        <button class="btn" onclick="saveData()" style="width:100%; background:#005a9e; margin-top:10px;">Uložit vše</button>
+        <button class="btn" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:#444; margin-top:10px;">Zavřít</button>
     </div>
 </div>
 
 <script>
-    let date = new Date(),
-        mode = 'prace',
-        isLocked = true,
-        isMouseDown = false,
-        selectedKey = "";
-
+    let date = new Date(), mode = 'prace', isLocked = true, allData = {}, selectedDay = 1, isMouseDown = false;
+    const SCRIPT_URL = 'URL_VASEHO_APPS_SCRIPTU'; 
     const persons = ["OLDA", "JÁŠA", "AISHA", "JINÉ"];
 
-    const API = {
-        fetchData: (key) => JSON.parse(localStorage.getItem(key) || '{"status":"","events":[]}'),
-        saveData: (key, data) => {
-            localStorage.setItem(key, JSON.stringify(data));
-            render();
-            scheduleNotifications();
-        }
-    };
-
-    function formatKey(year, monthIndex, day) {
-        const m = String(monthIndex + 1).padStart(2, '0');
-        const d = String(day).padStart(2, '0');
-        return `${year}-${m}-${d}`;
-    }
+    async function loadData() { try { const r = await fetch(SCRIPT_URL); allData = await r.json(); render(); } catch(e) { render(); } }
+    async function saveCloud() { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(allData) }); render(); }
 
     function render() {
-        const grid = document.getElementById('calendarGrid');
-        grid.innerHTML = "";
-
-        const monthLabel = date.toLocaleDateString('cs', {month: 'long', year: 'numeric'});
-        document.getElementById('monthLabel').innerText = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-        document.getElementById('monthSubLabel').innerText = `Týden ${getWeekNumber(date)} • ${date.toLocaleDateString('cs')}`;
-
+        const grid = document.getElementById('calendarGrid'); grid.innerHTML = "";
+        document.getElementById('monthLabel').innerText = date.toLocaleDateString('cs', {month:'long', year:'numeric'});
+        const firstDay = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
+        for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
         const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        const start = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7;
-
-        for (let i = 0; i < start; i++) {
-            grid.appendChild(document.createElement('div'));
-        }
-
-        const today = new Date();
-        for (let i = 1; i <= days; i++) {
-            const key = formatKey(date.getFullYear(), date.getMonth(), i);
-            const data = API.fetchData(key);
-            const d = document.createElement('div');
-            d.className = `day ${data.status} ${data.events.length ? 'has-notes' : ''}`;
-            d.innerHTML = `<div class="day-number">${i}</div><div class="day-badge">${data.events.length > 0 ? data.events.length + ' úkol' + (data.events.length > 1 ? 'y' : '') : ''}</div>`;
-
-            if (i === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()) d.classList.add('today');
-
-            d.onmousedown = (e) => { e.preventDefault(); if (!isLocked) { isMouseDown = true; paint(key, d); } else { openModal(key, i); } };
-            d.ontouchstart = (e) => { e.preventDefault(); if (!isLocked) { isMouseDown = true; paint(key, d); } else { openModal(key, i); } };
-            d.onmouseenter = () => { if (isMouseDown) paint(key, d); };
+        for(let i=1; i<=days; i++) {
+            let key = `${date.getFullYear()}-${date.getMonth()}-${i}`;
+            let data = allData[key] || {status:"", events:[]};
+            let d = document.createElement('div');
+            d.className = 'day ' + (data.status || '') + (data.events.length > 0 ? ' has-notes' : '');
+            d.innerText = i;
+            d.onmousedown = () => { if(!isLocked) { isMouseDown = true; applyMode(d, key, data); } else openModal(i, data); };
+            d.onmouseenter = () => { if(isMouseDown && !isLocked) applyMode(d, key, data); };
+            d.ontouchstart = (e) => { e.preventDefault(); if(!isLocked) { isMouseDown = true; applyMode(d, key, data); } else openModal(i, data); };
             grid.appendChild(d);
         }
-        updateAgenda();
+        updateTaskList();
     }
 
-    function paint(key, el) { let data = API.fetchData(key); data.status = mode; API.saveData(key, data); }
-    function toggleMenu() { const menu = document.getElementById('modeMenu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
-    function openModal(key, dayNum) {
-        selectedKey = key;
-        const data = API.fetchData(key);
-        const [year, month, day] = key.split('-');
-        document.getElementById('modalTitle').innerText = `${day}. ${month}. ${year}`;
-        document.getElementById('modalSub').innerText = data.status === 'prace' ? 'Pracovní den' : data.status === 'dovolena' ? 'Dovolená' : data.status === 'volno' ? 'Volno' : 'Bez režimu';
-        const container = document.getElementById('eventInputs');
-        container.innerHTML = "";
-        data.events.forEach(e => addEventInput(e));
+    function applyMode(el, key, data) {
+        data.status = mode; allData[key] = data;
+        el.className = 'day ' + mode + (data.events.length > 0 ? ' has-notes' : '');
+        saveCloud();
+    }
+
+    window.onmouseup = () => isMouseDown = false; window.ontouchend = () => isMouseDown = false;
+    function openModal(day, data) {
+        selectedDay = day; document.getElementById('modalTitle').innerText = `${day}. ${date.getMonth()+1}.`;
+        document.getElementById('eventInputs').innerHTML = ""; data.events.forEach(e => addEventInput(e));
         document.getElementById('modal').style.display = 'flex';
     }
-    function closeModal() { document.getElementById('modal').style.display = 'none'; }
-    function addEventInput(obj = {text: "", person: "JINÉ", notifyAt: null}) {
-        const div = document.createElement('div');
-        div.className = 'modal-card';
-        div.innerHTML = `<input value="${obj.text.replace(/"/g, '&quot;')}" class="evt-input" placeholder="Úkol..."> <input type="datetime-local" class="evt-notify" value="${obj.notifyAt ? new Date(obj.notifyAt).toISOString().slice(0,16) : ""}"> <div class="person-container">${persons.map(p => `<span class="person-btn ${p === obj.person ? 'active' : ''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">${p}</span>`).join('')}</div> <button class="btn btn-small btn-ghost" style="background:#7f1d1d; color:#fee2e2; width:100%;" onclick="this.parentElement.remove()">🗑 Smazat úkol</button>`;
+    function saveData() {
+        let events = []; document.querySelectorAll('.modal-card').forEach(card => {
+            let active = card.querySelector('.person-btn.active');
+            events.push({ text: card.querySelector('.evt-input').value, person: active ? active.innerText : "JINÉ" });
+        });
+        let key = `${date.getFullYear()}-${date.getMonth()}-${selectedDay}`;
+        allData[key] = { ...allData[key], events: events }; document.getElementById('modal').style.display = 'none'; saveCloud();
+    }
+    function addEventInput(obj = {text:"", person:"JINÉ"}) {
+        const div = document.createElement('div'); div.className = 'modal-card';
+        div.innerHTML = `<input value="${obj.text}" class="evt-input" placeholder="Úkol">
+            <div class="person-container">${persons.map(p => `<span class="person-btn p-${p} ${p===obj.person?'active':''}" onclick="this.parentElement.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">${p}</span>`).join('')}</div>
+            <button class="btn" style="background:#7f1d1d; width:100%; margin-top:10px;" onclick="this.parentElement.remove()">Smazat úkol</button>`;
         document.getElementById('eventInputs').appendChild(div);
     }
-    function saveData() {
-        let data = API.fetchData(selectedKey);
-        data.events = Array.from(document.querySelectorAll('#eventInputs > div')).map(div => ({
-            text: div.querySelector('.evt-input').value.trim(),
-            person: div.querySelector('.person-btn.active')?.innerText || 'JINÉ',
-            notifyAt: new Date(div.querySelector('.evt-notify').value).getTime() || null
-        })).filter(e => e.text.length > 0);
-        API.saveData(selectedKey, data);
-        closeModal();
-    }
-    function updateAgenda() {
-        const list = document.getElementById('taskList');
-        list.innerHTML = `<div class="agenda-header"><span class="agenda-title">Agenda měsíce</span></div>`;
-        const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        for (let i = 1; i <= days; i++) {
-            const key = formatKey(date.getFullYear(), date.getMonth(), i);
-            API.fetchData(key).events.forEach(e => {
-                const item = document.createElement('div');
-                item.className = `agenda-item color-${e.person}`;
-                item.innerHTML = `<span class="agenda-day">${i}.</span> <span class="agenda-person">${e.person}:</span> <span class="agenda-text">${e.text}</span>`;
-                list.appendChild(item);
+    function updateTaskList() {
+        const list = document.getElementById('taskList'); list.innerHTML = "<strong>Agenda:</strong>";
+        Object.keys(allData).sort().forEach(key => {
+            let den = key.split('-')[2];
+            allData[key].events.forEach(e => {
+                list.innerHTML += `<div class="p-${e.person}" style="padding:6px; margin:4px 0; border-radius:4px; color:white; font-size:0.85rem;"><b>${den}.</b> ${e.person}</div>`;
             });
-        }
+        });
     }
+    function toggleEdit() { document.getElementById('editPanel').style.display = (document.getElementById('editPanel').style.display === 'flex') ? 'none' : 'flex'; }
     function toggleLock() { isLocked = !isLocked; document.getElementById('lockBtn').innerText = isLocked ? "🔒" : "🔓"; }
     function setMode(m) { mode = m; }
     function changeMonth(dir) { date.setMonth(date.getMonth() + dir); render(); }
-    function getWeekNumber(d) { const dateCopy = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); dateCopy.setUTCDate(dateCopy.getUTCDate() + 4 - (dateCopy.getUTCDay()||7)); const yearStart = new Date(Date.UTC(dateCopy.getUTCFullYear(), 0, 1)); return Math.ceil((((dateCopy - yearStart) / 86400000) + 1) / 7); }
-    window.onmouseup = window.ontouchend = () => isMouseDown = false;
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    themeToggleBtn.addEventListener('click', () => {
-        const isLight = document.body.classList.toggle('light');
-        document.getElementById('themeIcon').textContent = isLight ? '☀️' : '🌙';
-        document.getElementById('themeLabel').textContent = isLight ? 'Světlý režim' : 'Tmavý režim';
-        localStorage.setItem('planner-theme', isLight ? 'light' : 'dark');
-    });
-    if(localStorage.getItem('planner-theme') === 'light') themeToggleBtn.click();
-    function scheduleNotifications() {
-        if (!("Notification" in window)) return;
-        Notification.requestPermission().then(p => { if (p !== "granted") return; });
-    }
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
-    render();
+    loadData();
 </script>
 </body>
 </html>

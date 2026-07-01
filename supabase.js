@@ -1,8 +1,8 @@
 // supabase.js
 // Vyplň si vlastní URL a ANON KEY z Supabase projektu
 
-const SUPABASE_URL = "https://TVEJE-PROJEKT-URL.supabase.co";
-const SUPABASE_ANON_KEY = "TVUJ_ANON_KEY";
+const SUPABASE_URL = "https://ncstippolhiaojmnzcgd.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_k_adk4_lKGUkAv37cQXyfg_KDCL6AOE";
 
 window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

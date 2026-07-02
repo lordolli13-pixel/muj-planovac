@@ -140,7 +140,7 @@ const persons = ["OLDA","JÁŠA","AISHA","JINÉ"];
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW chyba:', err));
 }
-    // Realtime listener – sleduje změny v tabulce planner_months
+// Realtime listener – sleduje změny v tabulce planner_months
 window.supabaseClient
   .channel('planner_changes')
   .on(
@@ -152,10 +152,18 @@ window.supabaseClient
     },
     payload => {
       console.log("Realtime update:", payload);
-      loadFromSupabase();
+
+      // Načti přesně ten měsíc, který se změnil
+      const y = payload.new.year;
+      const m = payload.new.month;
+
+      loadMonthFromSupabase(y, m).then(() => {
+        render();
+      });
     }
   )
   .subscribe();
+
 
 
 function render() {

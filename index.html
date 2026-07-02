@@ -140,6 +140,23 @@ const persons = ["OLDA","JÁŠA","AISHA","JINÉ"];
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW chyba:', err));
 }
+    // Realtime listener – sleduje změny v tabulce planner_months
+window.supabaseClient
+  .channel('planner_changes')
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'planner_months'
+    },
+    payload => {
+      console.log("Realtime update:", payload);
+      loadFromSupabase();
+    }
+  )
+  .subscribe();
+
 
 function render() {
     const grid = document.getElementById('calendarGrid');

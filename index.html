@@ -198,6 +198,7 @@ function paint(el,i){
     el.className = 'day '+mode+(data.events.length>0?' has-notes':'');
     localStorage.setItem(dayKey(i), JSON.stringify(data));
     updateTaskList();
+    syncToSupabase();
 }
 
 function toggleMarkMenu(){
@@ -250,6 +251,7 @@ function saveData(){
     localStorage.setItem(dayKey(selectedDay), JSON.stringify(data));
     document.getElementById('modal').style.display='none';
     render();
+    syncToSupabase();
 }
 
 function updateTaskList(){
